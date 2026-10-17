@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.10", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: pip install -e "backend[dev]"
+      - run: ruff check backend
+      - run: ruff format --check backend
+      - run: python -m pytest backend
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run lint:openapi
+
+  package:
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: PYTHON=python ./scripts/build.sh
+      # The package as deployed: the API answers and the interface is in it.
+      - name: Smoke test the Function package
+        working-directory: backend/dist/function
+        run: |
+          python - <<'PY'
+          import json
+          from main import handler
+          info = handler({"method": "GET", "path": "/api/v1/info"})
+          assert info["statusCode"] == 200, info
+          page = handler({"method": "GET", "path": "/"})
+          assert page["statusCode"] == 200 and "<div id=\"root\">" in page["body"], page["statusCode"]
+          print(json.loads(info["body"]))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: editpdf-function
+          path: backend/dist/function
+
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive infra/terraform

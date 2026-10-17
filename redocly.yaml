@@ -1,0 +1,7 @@
+# Lint settings for openapi/editpdf-v1.yaml (npm run lint:openapi).
+extends:
+  - recommended
+rules:
+  # The service operations (info, health, the document itself) take no input:
+  # there is no client error they could answer.
+  operation-4xx-response: off

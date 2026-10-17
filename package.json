@@ -1,0 +1,20 @@
+{
+  "name": "editpdf",
+  "private": true,
+  "description": "Merge, split and rotate PDF files with drag and drop. A Cloud Builder Function (Python) with a React interface.",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "frontend"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace frontend",
+    "build": "npm run build --workspace frontend",
+    "typecheck": "npm run typecheck --workspace frontend",
+    "test": "npm test --workspace frontend",
+    "lint:openapi": "npx --yes @redocly/cli@2.64.1 lint openapi/editpdf-v1.yaml"
+  }
+}

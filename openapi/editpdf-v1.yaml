@@ -1,0 +1,544 @@
+openapi: 3.1.0
+info:
+  title: editpdf API
+  version: 1.0.0
+  summary: Merge, split and rotate PDF documents.
+  description: |
+    The API behind https://editpdf.coderforge.org.
+
+    ## Versioning
+
+    The major version is part of the path (`/api/v1`). Within a major version
+    changes are additive only: new operations, new optional fields, new
+    response fields. A breaking change ships as `/api/v2`, and `/api/v1` keeps
+    answering for at least six months afterwards, announcing its retirement
+    with the `Deprecation` and `Sunset` response headers (RFC 9745, RFC 8594).
+    `info.version` is the version of this document; `GET /api/v1/info` tells
+    which one a deployment serves.
+
+    ## Files
+
+    Every operation takes its documents as `multipart/form-data`. Documents are
+    processed in memory and never stored: nothing outlives the request that
+    carried it. Password protected (encrypted) documents are refused.
+
+    Page numbers are 1-based. A page selection is a comma-separated list of
+    page numbers and ranges: `1`, `2-5`, `7-` (from page 7 to the last one).
+
+    ## Errors
+
+    Every error is an RFC 9457 problem document (`application/problem+json`)
+    whose `code` member is stable and meant for programs; `title` and
+    `detail` are for people and may change.
+
+    ## Terms
+
+    Use of this API is subject to the Terms and Conditions at
+    https://editpdf.coderforge.org/terms. The service is provided "as is",
+    without warranty of any kind, and its operators accept no liability for
+    the use made of it or of the documents it produces, to the maximum extent
+    permitted by applicable law.
+  license:
+    name: MIT
+    identifier: MIT
+  contact:
+    name: CoderForge.org
+    url: https://github.com/coderforge/editpdf
+  termsOfService: https://editpdf.coderforge.org/terms
+servers:
+  - url: https://editpdf.coderforge.org
+    description: Production
+# The API is public: no operation takes credentials.
+security: []
+tags:
+  - name: Documents
+    description: Operations on PDF documents.
+  - name: Service
+    description: What the service is and whether it is up.
+paths:
+  /api/v1/pdf/merge:
+    post:
+      tags: [Documents]
+      operationId: mergeDocuments
+      summary: Merge documents into one
+      description: |
+        Concatenates every page of every document, in the order the `files`
+        parts were sent.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MergeRequest'
+            encoding:
+              files:
+                contentType: application/pdf
+      responses:
+        '200':
+          $ref: '#/components/responses/PdfDocument'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableDocument'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/pdf/split:
+    post:
+      tags: [Documents]
+      operationId: splitDocument
+      summary: Split a document into several
+      description: |
+        Splits one document into parts and answers with a ZIP archive holding
+        one PDF per part, in order. How the parts are cut depends on `mode`:
+
+        - `each`: one part per page;
+        - `every`: parts of `size` pages each, the last one possibly shorter;
+        - `ranges`: one part per item of `ranges`, e.g. `1-3,4-6,7-`.
+
+        Without `mode`, the field sent says which one is meant: `ranges`
+        when `ranges` is sent, `every` when `size` is, `each` otherwise.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SplitRequest'
+            encoding:
+              file:
+                contentType: application/pdf
+      responses:
+        '200':
+          description: A ZIP archive with one PDF per part.
+          headers:
+            Content-Disposition:
+              $ref: '#/components/headers/ContentDisposition'
+            X-Part-Count:
+              description: How many documents the archive holds.
+              schema:
+                type: integer
+                minimum: 1
+          content:
+            application/zip:
+              schema:
+                type: string
+                contentMediaType: application/zip
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableDocument'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/pdf/rotate:
+    post:
+      tags: [Documents]
+      operationId: rotateDocument
+      summary: Rotate pages of a document
+      description: |
+        Rotates pages clockwise by a multiple of 90 degrees, on top of the
+        rotation they already have. Either `angle` with an optional `pages`
+        selection (all pages when omitted), or `rotations` for different
+        angles on different pages; `rotations` wins when both are sent.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RotateRequest'
+            encoding:
+              file:
+                contentType: application/pdf
+              rotations:
+                contentType: application/json
+      responses:
+        '200':
+          $ref: '#/components/responses/PdfDocument'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableDocument'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/pdf/inspect:
+    post:
+      tags: [Documents]
+      operationId: inspectDocument
+      summary: Describe a document
+      description: |
+        Answers with the number of pages, the size and rotation of each page
+        and the document information dictionary. An encrypted document is
+        described as far as its unencrypted structure allows.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InspectRequest'
+            encoding:
+              file:
+                contentType: application/pdf
+      responses:
+        '200':
+          description: The description of the document.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentInfo'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableDocument'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/info:
+    get:
+      tags: [Service]
+      operationId: getServiceInfo
+      summary: Version and limits of this deployment
+      responses:
+        '200':
+          description: What this deployment is and what it accepts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceInfo'
+  /api/v1/health:
+    get:
+      tags: [Service]
+      operationId: getHealth
+      summary: Liveness probe
+      responses:
+        '200':
+          description: The service is up.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+  /api/v1/openapi.yaml:
+    get:
+      tags: [Service]
+      operationId: getOpenApiDocument
+      summary: This document
+      responses:
+        '200':
+          description: The OpenAPI document of API v1.
+          content:
+            application/yaml:
+              schema:
+                type: string
+components:
+  headers:
+    ContentDisposition:
+      description: '`attachment`, with the name of the file to save.'
+      schema:
+        type: string
+        examples:
+          - attachment; filename="merged.pdf"; filename*=UTF-8''merged.pdf
+    PageCount:
+      description: How many pages the document has.
+      schema:
+        type: integer
+        minimum: 1
+  responses:
+    PdfDocument:
+      description: The resulting document.
+      headers:
+        Content-Disposition:
+          $ref: '#/components/headers/ContentDisposition'
+        X-Page-Count:
+          $ref: '#/components/headers/PageCount'
+      content:
+        application/pdf:
+          schema:
+            type: string
+            contentMediaType: application/pdf
+    BadRequest:
+      description: |
+        The request is malformed: a missing or invalid field (`invalid_request`),
+        too many files (`too_many_files`), or a page selection that does not
+        parse (`invalid_page_selection`).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    PayloadTooLarge:
+      description: |
+        The request body is larger than this deployment accepts
+        (`payload_too_large`), or the documents have more pages in total
+        than it processes in one request (`too_many_pages`).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnsupportedMediaType:
+      description: The request is not `multipart/form-data` (`unsupported_media_type`).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnprocessableDocument:
+      description: |
+        A document cannot be processed: it is not a PDF (`invalid_pdf`), it
+        is password protected (`encrypted_pdf`), or a page selection names a
+        page it does not have (`page_out_of_range`).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InternalError:
+      description: Something failed on our side (`internal_error`).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    PdfFile:
+      type: string
+      contentMediaType: application/pdf
+      description: A PDF document.
+    PageSelection:
+      type: string
+      description: |
+        Comma-separated page numbers and ranges, 1-based: `1`, `2-5`, `7-`
+        (to the last page). Whitespace is ignored.
+      pattern: '^\s*\d+\s*(-\s*\d*\s*)?(,\s*\d+\s*(-\s*\d*\s*)?)*$'
+      examples:
+        - 1-3,5,8-
+    OutputName:
+      type: string
+      description: |
+        Name of the file to save, without directories. `.pdf` (or `.zip`) is
+        added when missing. Defaults to a name derived from the input.
+      maxLength: 200
+    MergeRequest:
+      type: object
+      required: [files]
+      properties:
+        files:
+          type: array
+          description: The documents to merge, in order. At least two.
+          minItems: 2
+          items:
+            $ref: '#/components/schemas/PdfFile'
+        filename:
+          $ref: '#/components/schemas/OutputName'
+    SplitMode:
+      type: string
+      enum: [each, every, ranges]
+    SplitRequest:
+      type: object
+      required: [file]
+      properties:
+        file:
+          $ref: '#/components/schemas/PdfFile'
+        mode:
+          $ref: '#/components/schemas/SplitMode'
+        size:
+          type: integer
+          minimum: 1
+          description: Pages per part. Required when `mode` is `every`.
+        ranges:
+          $ref: '#/components/schemas/PageSelection'
+          description: |
+            One part per item. Required when `mode` is `ranges`. The parts
+            may overlap and need not cover every page.
+        filename:
+          $ref: '#/components/schemas/OutputName'
+    Angle:
+      type: integer
+      description: Clockwise rotation in degrees. `-90` is the same as `270`.
+      enum: [-270, -180, -90, 90, 180, 270]
+    Rotation:
+      type: object
+      required: [angle]
+      properties:
+        pages:
+          $ref: '#/components/schemas/PageSelection'
+          description: The pages to rotate. All of them when omitted.
+        angle:
+          $ref: '#/components/schemas/Angle'
+    RotateRequest:
+      type: object
+      required: [file]
+      properties:
+        file:
+          $ref: '#/components/schemas/PdfFile'
+        angle:
+          $ref: '#/components/schemas/Angle'
+        pages:
+          $ref: '#/components/schemas/PageSelection'
+          description: The pages `angle` applies to. All of them when omitted.
+        rotations:
+          type: array
+          description: |
+            Rotations to apply, a JSON array. A page named by several items
+            is rotated by each of them.
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Rotation'
+        filename:
+          $ref: '#/components/schemas/OutputName'
+    InspectRequest:
+      type: object
+      required: [file]
+      properties:
+        file:
+          $ref: '#/components/schemas/PdfFile'
+    PageInfo:
+      type: object
+      required: [number, width, height, rotation]
+      properties:
+        number:
+          type: integer
+          minimum: 1
+        width:
+          type: number
+          description: Width of the media box in points (1/72 inch), before rotation.
+        height:
+          type: number
+          description: Height of the media box in points (1/72 inch), before rotation.
+        rotation:
+          type: integer
+          enum: [0, 90, 180, 270]
+          description: Clockwise rotation the page is displayed with.
+    DocumentInfo:
+      type: object
+      required: [pageCount, encrypted, sizeBytes, pages, metadata]
+      properties:
+        pageCount:
+          type: integer
+          minimum: 0
+        encrypted:
+          type: boolean
+          description: Whether the document is password protected. Such a document cannot be merged, split or rotated.
+        sizeBytes:
+          type: integer
+          minimum: 0
+        pages:
+          type: array
+          items:
+            $ref: '#/components/schemas/PageInfo'
+        metadata:
+          type: object
+          description: The document information dictionary; absent entries are omitted.
+          properties:
+            title:
+              type: string
+            author:
+              type: string
+            subject:
+              type: string
+            keywords:
+              type: string
+            creator:
+              type: string
+            producer:
+              type: string
+            creationDate:
+              type: string
+              format: date-time
+            modificationDate:
+              type: string
+              format: date-time
+    Limits:
+      type: object
+      required: [maxUploadBytes, maxFiles, maxPages]
+      properties:
+        maxUploadBytes:
+          type: integer
+          description: Largest request body accepted, in bytes.
+        maxFiles:
+          type: integer
+          description: Most documents accepted by one merge.
+        maxPages:
+          type: integer
+          description: Most pages processed by one request, all documents together.
+    ServiceInfo:
+      type: object
+      required: [service, version, apiVersion, limits, terms]
+      properties:
+        service:
+          type: string
+          const: editpdf
+        version:
+          type: string
+          description: Version of the deployed build.
+        apiVersion:
+          type: string
+          description: Version of the API document this deployment implements.
+          examples:
+            - 1.0.0
+        limits:
+          $ref: '#/components/schemas/Limits'
+        terms:
+          type: object
+          required: [version, url]
+          properties:
+            version:
+              type: string
+              description: Date of the Terms and Conditions in force.
+              examples:
+                - '2026-10-17'
+            url:
+              type: string
+              format: uri
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          const: ok
+    ProblemCode:
+      type: string
+      enum:
+        - invalid_request
+        - invalid_page_selection
+        - too_many_files
+        - too_many_pages
+        - payload_too_large
+        - unsupported_media_type
+        - invalid_pdf
+        - encrypted_pdf
+        - page_out_of_range
+        - not_found
+        - method_not_allowed
+        - internal_error
+    Problem:
+      type: object
+      description: An RFC 9457 problem document.
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+          format: uri
+          description: Identifies the kind of problem; `https://editpdf.coderforge.org/problems/{code}` describes it.
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          $ref: '#/components/schemas/ProblemCode'
+        field:
+          type: string
+          description: The request field at fault, when there is one.
+        requestId:
+          type: string
+          description: Quote it when reporting a problem.

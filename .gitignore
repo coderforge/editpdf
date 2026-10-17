@@ -1,0 +1,26 @@
+# Dependencies and builds
+node_modules/
+frontend/dist/
+backend/dist/
+backend/.venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Generated from openapi/editpdf-v1.yaml by `npm run generate` (frontend)
+frontend/src/api/schema.gen.ts
+
+# Local settings and secrets: never in a commit
+.env
+*.pem
+*.key
+trust/
+
+# Editors and systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

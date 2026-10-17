@@ -1,0 +1,2 @@
+# What the function's package carries (scripts/build_function.py): pure Python only.
+pypdf==6.21.1
