@@ -12,8 +12,8 @@ What editpdf relies on today:
 | | Status |
 |---|---|
 | A Python runtime, handler `main.handler`, a zip package (`coderforge_function`, `executable { filename, source_code_hash, handler, runtime_type, runtime_version }`) | in use (the `reverse-string` example) |
-| The function's environment from a parameter (`env_param_rid`), as container services have | **assumed**, see F5 |
-| A public HTTP trigger: a domain routed to the function | **missing**, F1 |
+| The function's environment from a parameter (`env_param_rid`), as container services have | **missing** (the provider refuses `env_param_rid`), F5; editpdf runs on its defaults |
+| A public HTTP trigger: a domain routed to the function | **missing** (the provider refuses `function_rid` on a route), F1 |
 | A documented HTTP event and result, binary safe | **to confirm**, F2 |
 
 ## P0: needed to go live
@@ -106,8 +106,24 @@ showed, a changed environment must redeploy, or the running code never sees it.
 
 **Proposal.** `env_param_rid` and `env_secret_rid` on `coderforge_function`,
 and the provider folds the parameter's value and the secret's keys into the
-change it plans, so that editing a setting is a planned redeploy without the
-`source_code_hash` trick used in `infra/terraform/main.tf`.
+change it plans, so that editing a setting is a planned redeploy without
+hashing the environment into `source_code_hash` by hand (as fundamentals has
+to). editpdf would then take:
+
+```hcl
+resource "coderforge_param" "env" {
+  name = "editpdf-env"
+  value = jsonencode({
+    EDITPDF_PUBLIC_URL       = "https://editpdf.coderforge.org"
+    EDITPDF_MAX_UPLOAD_BYTES = "26214400"
+  })
+}
+
+resource "coderforge_function" "editpdf" {
+  # ...
+  env_param_rid = coderforge_param.env.id
+}
+```
 
 ## P1: needed to run it well
 

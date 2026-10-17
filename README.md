@@ -103,20 +103,21 @@ terraform init
 terraform apply
 ```
 
-Before the domain answers:
+This deploys the Function. For `https://editpdf.coderforge.org` to answer:
 
-1. **Certificate.** Issue `editpdf.coderforge.org` with CA-Manage and store it
+1. **Route.** A secure-gateway route whose backend is the Function: the
+   platform does not have it yet, see proposal F1 in
+   [`docs/cloudbuilder-functions-improvements.md`](docs/cloudbuilder-functions-improvements.md).
+2. **Certificate.** Issue `editpdf.coderforge.org` with CA-Manage and store it
    in the vault under that name, as for the other routes (tf-coderforge-stack
    trust ids). It needs automatic renewal like every CA-Manage certificate.
-2. **Cloudflare.** A proxied record for `editpdf`, like `cloud` and `cloud-proc`.
 3. **cf-edge.** Add `editpdf.coderforge.org` to `EDGE_DOMAINS` in fundamentals.
-4. **Route.** `coderforge_gateway_route` with a function backend is proposal F1
-   in [`docs/cloudbuilder-functions-improvements.md`](docs/cloudbuilder-functions-improvements.md);
-   until the platform has it, apply with `-var expose_with_gateway_route=false`.
+4. **Cloudflare.** A proxied record for `editpdf`, like `cloud` and `cloud-proc`, last.
 
 ### Settings
 
-Read from the Function's environment (`infra/terraform/main.tf` sets them):
+Read from the environment; the Function runs on the defaults until Functions
+take an environment (proposal F5):
 
 | Variable | Default | |
 |---|---|---|

@@ -1,10 +1,5 @@
 # Copy to terraform.tfvars and adjust. Every value has a default.
 
 # endpoint                 = "https://terraform.coderforge.org"
-# domain                   = "editpdf.coderforge.org"
+# function_name            = "editpdf"
 # function_runtime_version = "3.12"
-# max_upload_bytes         = 26214400
-
-# Deploy the function without publishing it, while gateway routes cannot
-# target a function yet (docs/cloudbuilder-functions-improvements.md, F1):
-# expose_with_gateway_route = false
