@@ -1,8 +1,7 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { Markdown, parseBlocks } from "../legal/Markdown";
-import termsEn from "../../../legal/terms.en.md?raw";
-import termsIt from "../../../legal/terms.it.md?raw";
+import terms from "../../../legal/terms.en.md?raw";
 
 describe("Markdown", () => {
   it("keeps a numbered list going across nested bullets", () => {
@@ -35,10 +34,8 @@ describe("Markdown", () => {
     expect(container.querySelector("a")).toBeNull();
   });
 
-  it("gives both versions of the terms the same sections", () => {
-    const headings = (source: string) =>
-      parseBlocks(source).filter((block) => block.kind === "heading" && block.level === 2).length;
-    expect(headings(termsEn)).toBe(15);
-    expect(headings(termsIt)).toBe(headings(termsEn));
+  it("parses the terms into their 15 sections", () => {
+    const headings = parseBlocks(terms).filter((block) => block.kind === "heading" && block.level === 2);
+    expect(headings).toHaveLength(15);
   });
 });

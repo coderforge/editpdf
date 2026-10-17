@@ -1,13 +1,12 @@
 import { useEffect } from "react";
-import termsEn from "../../../legal/terms.en.md?raw";
-import termsIt from "../../../legal/terms.it.md?raw";
-import { format, useI18n } from "../i18n";
+import terms from "../../../legal/terms.en.md?raw";
+import { useI18n } from "../i18n";
 import { Markdown } from "../legal/Markdown";
 import { Link } from "../router";
 import { TERMS_VERSION } from "../service";
 
 export function TermsPage() {
-  const { t, language, setLanguage } = useI18n();
+  const { t } = useI18n();
 
   useEffect(() => {
     document.title = `${t.footer.terms} - editpdf`;
@@ -17,12 +16,16 @@ export function TermsPage() {
     <article className="legal">
       <nav className="legal__nav">
         <Link to="merge">← {t.terms.back}</Link>
-        <button type="button" className="button button--link" onClick={() => setLanguage(language === "en" ? "it" : "en")}>
-          {t.terms.other}
-        </button>
       </nav>
-      <p className="legal__version">{format(t.terms.version, { version: TERMS_VERSION })}</p>
-      <Markdown source={language === "it" ? termsIt : termsEn} />
+      {t.terms.englishOnly === "" ? null : (
+        <p className="notice notice--info">
+          {t.terms.englishOnly}
+        </p>
+      )}
+      <div lang="en">
+        <p className="legal__version">Version of {TERMS_VERSION}</p>
+        <Markdown source={terms} />
+      </div>
     </article>
   );
 }

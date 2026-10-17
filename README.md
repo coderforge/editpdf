@@ -26,7 +26,7 @@ browser ── Cloudflare ── cf-edge ── secure-gateway ── Cloud Buil
 | `backend/` | The service in Python: `src/editpdf/`, tests in `tests/`, the Function package builder in `scripts/build_function.py`. |
 | `frontend/` | The web interface: React + TypeScript (TSX) + Vite. |
 | `infra/terraform/` | The deployment: the Function, its settings, the gateway route. |
-| `legal/` | Terms and Conditions (English, Italian) and their version. |
+| `legal/` | Terms and Conditions (English) and their version. |
 | `docs/cloudbuilder-functions-improvements.md` | What the Functions platform needs for this service, as proposals. |
 | `scripts/build.sh`, `scripts/build.ps1` | Build everything that is deployed. |
 
@@ -140,5 +140,5 @@ Read from the Function's environment (`infra/terraform/main.tf` sets them):
 
 The code is under the [MIT License](LICENSE). Use of the service at
 editpdf.coderforge.org is subject to its
-[Terms and Conditions](legal/terms.en.md) ([italiano](legal/terms.it.md)):
+[Terms and Conditions](legal/terms.en.md) (English only: the operator is a UK company):
 it is provided as is, without warranty, and used at the user's own risk.

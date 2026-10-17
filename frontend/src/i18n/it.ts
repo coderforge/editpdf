@@ -120,8 +120,8 @@ export const it: Messages = {
   },
   terms: {
     back: "Torna a editpdf",
-    version: "Versione del {version}",
-    other: "Read in English",
+    englishOnly:
+      "I Termini e Condizioni sono disponibili solo in inglese, la lingua della società che gestisce il servizio (CoderForge.org Ltd, Regno Unito). Accettandoli dichiari di averli letti e compresi.",
   },
   notFound: {
     title: "Pagina non trovata",

@@ -117,8 +117,8 @@ export const en = {
   },
   terms: {
     back: "Back to editpdf",
-    version: "Version of {version}",
-    other: "Leggi in italiano",
+    /** Shown above the terms in languages other than English; empty in English. */
+    englishOnly: "",
   },
   notFound: {
     title: "Page not found",

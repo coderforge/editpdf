@@ -69,12 +69,12 @@ This summary helps you read the Terms; it does not replace them.
    - loss of profits, revenue, business, contracts, opportunities, goodwill or anticipated savings;
    - cost of procuring substitute services;
    - consequences of decisions taken, or documents used, sent, filed or signed, on the basis of a result of the Service.
-3. Where, despite the above, we are found liable under a law that does not allow our liability to be excluded entirely, our total aggregate liability for all claims arising out of or in connection with the Service is limited, to the extent that law allows, to fifty euros (EUR 50).
+3. The Service is free: nothing is payable by you for using it. If, despite the above, we are found liable to you under a law that does not allow our liability to be excluded entirely, the most we can be required to pay you, for all claims arising out of or in connection with the Service taken together, is fifty euros (EUR 50), to the extent that law allows.
 4. Section 8 prevails over this section.
 
 ## 8. Liability that cannot be excluded
 
-Nothing in these Terms excludes or limits any liability that cannot be excluded or limited under the applicable law, including liability for death or personal injury caused by negligence, for fraud or fraudulent misrepresentation, or, where the applicable law so provides, for wilful misconduct or gross negligence (for example under article 1229 of the Italian Civil Code). If you use the Service as a consumer, you keep the protection given to you by the mandatory provisions of the law of the country where you live; these Terms do not affect those rights.
+Nothing in these Terms excludes or limits any liability that cannot be excluded or limited under the laws of England and Wales, including liability for death or personal injury caused by negligence, or for fraud or fraudulent misrepresentation. If you use the Service as a consumer, nothing in these Terms affects your statutory rights.
 
 ## 9. Indemnity
 
@@ -94,7 +94,7 @@ We may change these Terms at any time. The version in force is the one published
 
 ## 13. Governing law and jurisdiction
 
-These Terms, and any dispute or claim arising out of or in connection with them or the Service, are governed by the laws of England and Wales. The courts of England and Wales have exclusive jurisdiction, without prejudice to the mandatory rights of consumers to bring proceedings in the courts of the country where they live.
+These Terms, and any dispute or claim arising out of or in connection with them or the Service, are governed by the laws of England and Wales. The courts of England and Wales have exclusive jurisdiction, except where a consumer has a statutory right to bring proceedings elsewhere.
 
 ## 14. General
 
@@ -102,7 +102,7 @@ These Terms, and any dispute or claim arising out of or in connection with them 
 2. Our failure to enforce any provision is not a waiver of it.
 3. These Terms are the entire agreement between you and us about the Service.
 4. You may not transfer your rights under these Terms. We may transfer ours, for example to another entity that operates the Service.
-5. These Terms are published in English and in Italian. If the two versions differ, the English version prevails, except where mandatory law requires otherwise.
+5. These Terms are written in English, the language of the company that operates the Service. Any translation is provided for convenience only; the English version prevails.
 
 ## 15. Contact
 
