@@ -4,6 +4,12 @@ variable "endpoint" {
   description = "Base URL of terraform-api, as for every other CoderForge stack."
 }
 
+variable "locations" {
+  type        = list(string)
+  default     = ["c-gbr-1:s1"]
+  description = "Where the function is created: a region, or region:zone. c-gbr-1:s1 is srv12."
+}
+
 variable "function_name" {
   type        = string
   default     = "editpdf"

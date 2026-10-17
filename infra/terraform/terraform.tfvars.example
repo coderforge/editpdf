@@ -1,5 +1,6 @@
 # Copy to terraform.tfvars and adjust. Every value has a default.
 
 # endpoint                 = "https://terraform.coderforge.org"
+# locations                = ["c-gbr-1:s1"]
 # function_name            = "editpdf"
 # function_runtime_version = "3.12"
