@@ -1,8 +1,8 @@
-"""The service on Python's HTTP server: for local development (`npm run dev:api`
-or `python -m editpdf.server`), the tests, and a container when it runs as a
-Cloud Builder container service instead of a Function.
+"""The service on Python's HTTP server, for local development
+(`python -m editpdf.server`, behind `npm run dev`) and the tests. In service
+it runs as the Cloud Builder Function (editpdf.function.handler).
 
-    EDITPDF_HOST         interface to listen on (127.0.0.1; 0.0.0.0 in a container)
+    EDITPDF_HOST         interface to listen on (127.0.0.1)
     EDITPDF_PORT         port (8787)
     EDITPDF_STATIC_DIR   the built web interface (frontend/dist)
 
