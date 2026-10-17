@@ -91,7 +91,7 @@ library's job, so the Function package stays pure Python.
 
 builds the interface (`frontend/dist`) and the Function package
 (`backend/dist/function`: `main.py`, `editpdf/`, `pypdf/`, `static/`;
-handler `main.handler`), which Terraform deploys as the Cloud Builder
+entry file `main.py`, handler `handler`), which Terraform deploys as the Cloud Builder
 Function.
 
 Then, with a `CODERFORGE_TOKEN` and the provider as for the other stacks

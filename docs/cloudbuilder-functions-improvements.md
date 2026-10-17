@@ -11,7 +11,7 @@ What editpdf relies on today:
 
 | | Status |
 |---|---|
-| A Python runtime, handler `main.handler`, a zip package (`coderforge_function`, `executable { filename, source_code_hash, handler, runtime_type, runtime_version }`) | in use (the `reverse-string` example) |
+| A Python runtime, entry file `main.py` with handler `handler`, a zip package (`coderforge_function`, `executable { filename, source_code_hash, handler, runtime_type, runtime_version }`) | in use (the `reverse-string` example) |
 | The function's environment from a parameter (`env_param_rid`), as container services have | **missing** (the provider refuses `env_param_rid`), F5; editpdf runs on its defaults |
 | A public HTTP trigger: a domain routed to the function | **missing** (the provider refuses `function_rid` on a route), F1 |
 | A documented HTTP event and result, binary safe | **to confirm**, F2 |

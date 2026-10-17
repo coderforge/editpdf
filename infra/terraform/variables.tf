@@ -24,8 +24,13 @@ variable "package_dir" {
 
 variable "function_handler" {
   type        = string
-  default     = "main.handler"
-  description = "Module and function the runtime calls: main.py in the package, handler(event, context)."
+  default     = "handler"
+  description = "Name of the function the runtime calls in the package's entry file (main.py): handler(event, context)."
+
+  validation {
+    condition     = can(regex("^[A-Za-z_][A-Za-z0-9_]*$", var.function_handler))
+    error_message = "The handler is a plain identifier, the name of a function in the entry file."
+  }
 }
 
 variable "function_runtime_type" {
