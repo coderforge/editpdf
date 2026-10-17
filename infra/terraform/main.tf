@@ -18,16 +18,16 @@ data "archive_file" "function" {
   output_path = "${path.module}/.build/editpdf-function.zip"
 }
 
-# The service runs on its built-in settings (backend/src/editpdf/config.py):
-# functions take no environment yet (proposal F5).
+# The package describes itself (manifest.json: Python, main.py,
+# function_handler), so no handler or runtime is named here. The service runs
+# on its built-in settings (backend/src/editpdf/config.py): functions take no
+# environment yet (proposal F5).
 resource "coderforge_function" "editpdf" {
-  name = var.function_name
+  name    = var.function_name
+  timeout = var.function_timeout
 
   executable {
     filename         = data.archive_file.function.output_path
     source_code_hash = data.archive_file.function.output_base64sha256
-    handler          = var.function_handler
-    runtime_type     = var.function_runtime_type
-    runtime_version  = var.function_runtime_version
   }
 }

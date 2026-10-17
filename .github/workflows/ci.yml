@@ -56,7 +56,10 @@ jobs:
         run: |
           python - <<'PY'
           import json
-          from main import handler
+          from pathlib import Path
+          manifest = json.loads(Path("manifest.json").read_text())
+          assert manifest == {"type": "python", "main": "main.py", "handler": "function_handler"}, manifest
+          from main import function_handler as handler
           info = handler({"method": "GET", "path": "/api/v1/info"})
           assert info["statusCode"] == 200, info
           page = handler({"method": "GET", "path": "/"})

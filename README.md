@@ -90,9 +90,11 @@ library's job, so the Function package stays pure Python.
 ```
 
 builds the interface (`frontend/dist`) and the Function package
-(`backend/dist/function`: `main.py`, `editpdf/`, `pypdf/`, `static/`;
-entry file `main.py`, handler `handler`), which Terraform deploys as the Cloud Builder
-Function.
+(`backend/dist/function`), which Terraform deploys as the Cloud Builder
+Function. The package describes itself in `manifest.json` (Python, entry file
+`main.py`, handler `function_handler`); it is pure Python, since Functions run
+in a sandboxed WebAssembly runtime in the browser (Pyodide), and it has been
+run there on Python 3.12, 3.13 and 3.14.
 
 Then, with a `CODERFORGE_TOKEN` and the provider as for the other stacks
 (`TF_CLI_CONFIG_FILE` pointing at the `dev.tfrc` override):

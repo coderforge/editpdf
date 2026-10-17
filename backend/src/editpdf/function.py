@@ -9,7 +9,8 @@ takes the answer back. It accepts the HTTP event shapes in common use:
   `multiValueHeaders`);
 - a plain one: `{"method", "path" | "url", "query", "headers", "body"}`;
 
-as a dict or as its JSON text. Bodies come as text, as base64
+as a dict, as its JSON text, or as the JavaScript object a browser runtime
+(Pyodide) hands over. Bodies come as text, as base64
 (`isBase64Encoded`) or as bytes. The answer goes back as
 `{"statusCode", "headers", "body", "isBase64Encoded"}`: binary bodies (PDF,
 ZIP) in base64, text as it is.
@@ -130,8 +131,16 @@ def to_result(response: Response) -> dict[str, Any]:
     }
 
 
+def _to_python(value: Any) -> Any:
+    """A JavaScript object (Pyodide's JsProxy, in a browser runtime) as Python."""
+    to_py = getattr(value, "to_py", None)
+    return to_py() if callable(to_py) else value
+
+
 def handler(event: Mapping[str, Any] | str | bytes, context: Any = None) -> dict[str, Any]:
-    """An HTTP event in, an HTTP result out."""
+    """An HTTP event in, an HTTP result out (the Lambda contract the platform follows)."""
+    event = _to_python(event)
+    context = _to_python(context)
     if isinstance(event, (str, bytes, bytearray)):
         event = json.loads(event)
     if not isinstance(event, Mapping):

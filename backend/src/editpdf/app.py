@@ -14,6 +14,8 @@ import zipfile
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from functools import cache
+from importlib.resources import files
+from importlib.resources.abc import Traversable
 from pathlib import Path
 from typing import Any
 
@@ -36,9 +38,11 @@ from editpdf.static import StaticFiles
 
 API_PREFIX = "/api/"
 
-_PACKAGE = Path(__file__).resolve().parent
-# In the repository: backend/src/editpdf -> the repository root.
-_REPOSITORY = _PACKAGE.parents[2]
+# In the repository, backend/src/editpdf -> the repository root: where the
+# OpenAPI document and the built interface are found during development. A
+# bundled package carries its own (resources/, static/) and may sit anywhere.
+_HERE = Path(__file__).resolve().parent
+_REPOSITORY = _HERE.parents[2] if len(_HERE.parents) > 2 else _HERE
 
 # Headers a browser page on another origin may read (CORS).
 _EXPOSED_HEADERS = "Content-Disposition, X-Page-Count, X-Part-Count, X-Request-Id"
@@ -57,10 +61,16 @@ _ANGLES = {-270, -180, -90, 90, 180, 270}
 logger = logging.getLogger("editpdf")
 
 
-def _resource(bundled: str, in_repository: str) -> Path:
+def _bundled() -> Traversable:
+    """The package's own files, wherever the runtime imports it from (a
+    directory, or the function's zip)."""
+    return files("editpdf")
+
+
+def _resource(bundled: str, in_repository: str) -> Traversable:
     """A file the package carries when bundled (resources/), else the repository's own."""
-    path = _PACKAGE / "resources" / bundled
-    return path if path.is_file() else _REPOSITORY / in_repository
+    resource = _bundled().joinpath("resources").joinpath(bundled)
+    return resource if resource.is_file() else _REPOSITORY / in_repository
 
 
 @cache
@@ -79,10 +89,10 @@ def terms_version() -> str:
     return _resource("TERMS_VERSION", "legal/VERSION").read_text(encoding="utf-8").strip()
 
 
-def default_static_dir() -> Path:
-    """The built interface: static/ next to the package when bundled, else frontend/dist."""
-    bundled = _PACKAGE.parent / "static"
-    return bundled if bundled.is_dir() else _REPOSITORY / "frontend" / "dist"
+def default_static_dir() -> Traversable:
+    """The built interface: the package's static/ when bundled, else frontend/dist."""
+    bundled = _bundled().joinpath("static")
+    return bundled if bundled.joinpath("index.html").is_file() else _REPOSITORY / "frontend" / "dist"
 
 
 def _log_json(entry: dict[str, Any]) -> None:
@@ -230,7 +240,7 @@ class App:
         self,
         config: Config,
         *,
-        static_dir: Path | None = None,
+        static_dir: Traversable | None = None,
         log: Callable[[dict[str, Any]], None] | None = None,
     ) -> None:
         self.config = config

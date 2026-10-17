@@ -22,30 +22,13 @@ variable "package_dir" {
   description = "The function's package, built by backend/scripts/build_function.py (scripts/build.sh or .ps1), relative to this directory."
 }
 
-variable "function_handler" {
-  type        = string
-  default     = "handler"
-  description = "Name of the function the runtime calls in the package's entry file (main.py): handler(event, context)."
+variable "function_timeout" {
+  type        = number
+  default     = 60
+  description = "How long one call may run, in seconds. Below Cloudflare's 100 seconds, which would cut a longer call off anyway."
 
   validation {
-    condition     = can(regex("^[A-Za-z_][A-Za-z0-9_]*$", var.function_handler))
-    error_message = "The handler is a plain identifier, the name of a function in the entry file."
-  }
-}
-
-variable "function_runtime_type" {
-  type        = string
-  default     = "python"
-  description = "Runtime of the function. The package is pure Python (editpdf + pypdf)."
-}
-
-variable "function_runtime_version" {
-  type        = string
-  default     = "3.12"
-  description = "Python version of the runtime; the package needs 3.10 or later."
-
-  validation {
-    condition     = can(regex("^3\\.(1[0-9]|[2-9][0-9])$", var.function_runtime_version))
-    error_message = "The package needs Python 3.10 or later."
+    condition     = var.function_timeout >= 1 && var.function_timeout <= 90
+    error_message = "Between 1 and 90 seconds: Cloudflare ends a request after 100."
   }
 }

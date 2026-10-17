@@ -131,3 +131,18 @@ def test_joins_repeated_headers_and_passes_cookies():
 
 def test_drops_a_body_on_get():
     assert to_request({"method": "GET", "path": "/", "body": "ignored"}).body == b""
+
+
+class JsProxyLike:
+    """What Pyodide hands a Python function for a JavaScript object."""
+
+    def __init__(self, value):
+        self._value = value
+
+    def to_py(self):
+        return self._value
+
+
+def test_takes_events_handed_over_as_javascript_objects():
+    result = handler(JsProxyLike({"method": "GET", "path": "/api/v1/health"}), JsProxyLike({"env": {}}))
+    assert (result["statusCode"], result["body"]) == (200, '{"status":"ok"}')

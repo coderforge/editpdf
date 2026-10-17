@@ -3,4 +3,4 @@
 # endpoint                 = "https://terraform.coderforge.org"
 # locations                = ["c-gbr-1:s1"]
 # function_name            = "editpdf"
-# function_runtime_version = "3.12"
+# function_timeout         = 60

@@ -7,7 +7,7 @@ import hashlib
 import mimetypes
 import posixpath
 import threading
-from pathlib import Path
+from importlib.resources.abc import Traversable
 from urllib.parse import unquote
 
 from editpdf.http import Headers, Request, Response
@@ -57,58 +57,69 @@ _TYPES = {
 
 
 class StaticFiles:
-    """Files of one directory, read once and kept: the interface is small."""
+    """Files of one directory, read once and kept: the interface is small.
 
-    def __init__(self, root: Path) -> None:
-        self.root = root.resolve()
-        self._cache: dict[Path, tuple[bytes, str]] = {}
+    The root is a Traversable: a directory on disk, or a package's resources
+    (importlib.resources), which also works when a function's runtime imports
+    the package straight from its zip.
+    """
+
+    def __init__(self, root: Traversable) -> None:
+        self.root = root
+        self._cache: dict[str, tuple[bytes, str]] = {}
         self._lock = threading.Lock()
 
     def available(self) -> bool:
-        return (self.root / "index.html").is_file()
+        return self.root.joinpath("index.html").is_file()
 
-    def _read(self, path: Path) -> tuple[bytes, str]:
+    def _read(self, relative: str, node: Traversable) -> tuple[bytes, str]:
         with self._lock:
-            cached = self._cache.get(path)
+            cached = self._cache.get(relative)
             if cached is None:
-                body = path.read_bytes()
+                body = node.read_bytes()
                 digest = base64.urlsafe_b64encode(hashlib.sha256(body).digest()).decode()[:22]
                 cached = (body, f'"{digest}"')
-                self._cache[path] = cached
+                self._cache[relative] = cached
             return cached
 
-    def _locate(self, url_path: str) -> Path | None:
+    def _node(self, relative: str) -> Traversable | None:
+        node = self.root
+        for part in relative.split("/"):
+            node = node.joinpath(part)
+        return node if node.is_file() else None
+
+    def _locate(self, url_path: str) -> tuple[str, Traversable] | None:
         try:
             decoded = unquote(url_path, errors="strict")
         except UnicodeDecodeError:
             return None
-        if "\x00" in decoded or ".." in decoded.split("/"):
+        # Never out of the root: no climbing, no hidden files, no empty or odd segments.
+        if "\x00" in decoded or "\\" in decoded or any(part.startswith(".") for part in decoded.split("/")):
             return None
         relative = posixpath.normpath(decoded).lstrip("/")
         if relative in ("", "."):
             relative = "index.html"
-        candidate = (self.root / relative).resolve()
-        if candidate != self.root and self.root not in candidate.parents:
-            return None
-        if candidate.is_file():
-            return candidate
+        node = self._node(relative)
+        if node is not None:
+            return relative, node
         # An address with no file extension is a page of the single-page
         # interface: it gets index.html, and the interface's router decides.
         if "." not in relative.rsplit("/", 1)[-1]:
-            index = self.root / "index.html"
-            return index if index.is_file() else None
+            index = self._node("index.html")
+            return ("index.html", index) if index is not None else None
         return None
 
     def response(self, request: Request) -> Response | None:
         """The interface's file for a GET or HEAD, or None when there is none."""
-        path = self._locate(request.path)
-        if path is None:
+        located = self._locate(request.path)
+        if located is None:
             return None
-        body, etag = self._read(path)
-        content_type = (
-            _TYPES.get(path.suffix.lower()) or mimetypes.guess_type(path.name)[0] or "application/octet-stream"
-        )
-        immutable = path.parent.name == "assets" and path.parent.parent == self.root
+        relative, node = located
+        body, etag = self._read(relative, node)
+        name = relative.rsplit("/", 1)[-1]
+        suffix = name[name.rfind(".") :].lower() if "." in name else ""
+        content_type = _TYPES.get(suffix) or mimetypes.guess_type(name)[0] or "application/octet-stream"
+        immutable = relative.startswith("assets/")
         headers = Headers(
             {
                 "content-type": content_type,
@@ -118,8 +129,8 @@ class StaticFiles:
             }
         )
         if content_type.startswith("text/html"):
-            for name, value in PAGE_HEADERS.items():
-                headers.set(name, value)
+            for header, value in PAGE_HEADERS.items():
+                headers.set(header, value)
         tags = [tag.strip().removeprefix("W/") for tag in (request.headers.get("if-none-match") or "").split(",")]
         if etag in tags:
             return Response(304, headers)

@@ -11,7 +11,8 @@ What editpdf relies on today:
 
 | | Status |
 |---|---|
-| A Python runtime, entry file `main.py` with handler `handler`, a zip package (`coderforge_function`, `executable { filename, source_code_hash, handler, runtime_type, runtime_version }`) | in use (the `reverse-string` example) |
+| A Python runtime, a zip package that describes itself (`manifest.json`: `type`, `main`, `handler`), `timeout` | in use: `coderforge_function` with `executable { filename, source_code_hash }`, `timeout = 60` |
+| Functions run on processors: a sandboxed WebAssembly runtime in a browser (Pyodide for Python) | confirmed by the provider; the package is pure Python and runs on Pyodide 3.12 to 3.14 |
 | The function's environment from a parameter (`env_param_rid`), as container services have | **missing** (the provider refuses `env_param_rid`), F5; editpdf runs on its defaults |
 | A public HTTP trigger: a domain routed to the function | **missing** (the provider refuses `function_rid` on a route), F1 |
 | A documented HTTP event and result, binary safe | **to confirm**, F2 |
@@ -72,23 +73,30 @@ platform settles on.
 ### F3. Per-function limits
 
 **Problem.** The function has to state, and the platform to enforce, how much
-a request may carry and how long it may run. The first `coderforge_function`
-schema had `timeout` and `max_ram_size`; the executable-based one does not
-show them.
+a request may carry and how long it may run. `coderforge_function` has
+`timeout` (1 to 900 seconds; editpdf uses 60, under Cloudflare's 100); there is
+no limit on the size of a request or an answer, nor on the memory a processor
+gives a call.
 
-**Proposal.** `timeout_seconds`, `memory_mb`, `max_request_bytes` and
-`max_response_bytes` on `coderforge_function`, enforced by the platform with
-clear errors (413, 504). The timeout must stay under Cloudflare's 100 seconds
-for anything published through it. editpdf would take `max_request_bytes = 26214400`
-and `timeout_seconds = 60`.
+**Proposal.** `max_request_bytes`, `max_response_bytes` and `memory_mb` on
+`coderforge_function`, enforced by the platform with clear errors (413, 507).
+editpdf would take `max_request_bytes = 26214400`: a 20 MB merge of 300 pages
+takes about 5 seconds on Pyodide, and its answer is as large as its request.
 
 ### F4. Where functions run, for private data
 
-**Problem.** The platform has processors (`/api/v1/function/process`,
-`/api/v1/function/processors`, a pool with idle and warm processors). editpdf
-handles documents people upload: contracts, invoices, IDs. Whoever operates a
-processor sees them. If a processor can be a browser page or a machine outside
-the platform's control, editpdf must not run there.
+**Problem.** Functions run on processors: browser pages
+(`/api/v1/function/process`, served on cloud-proc.coderforge.org) that run the
+code in a sandboxed WebAssembly runtime, and a call is answered only while one
+is connected. Two consequences for a public service that handles documents
+people upload (contracts, invoices, IDs):
+
+- **Availability.** editpdf answers only while a processor tab is open
+  somewhere. A public service needs processors that are always there: headless
+  browsers on platform machines, started and restarted by the platform.
+- **Privacy.** Whoever operates a processor runs the code, and the documents
+  pass through that browser's memory. editpdf must run only on processors the
+  platform operates.
 
 **Proposal.** A function states where it may run, `processor_pool = "platform"`
 (platform-operated, trusted processors only) versus a public pool, and the
